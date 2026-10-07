@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Deploy Agent</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --user: #0ea5e9;
+            --agent: #334155;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #22d3ee;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            background: linear-gradient(160deg, #0f172a 0%, #164e63 100%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            letter-spacing: .02em;
+        }
+        header p {
+            margin: .35rem 0 0;
+            color: var(--muted);
+            font-size: .95rem;
+        }
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 820px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        #chat {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: .75rem;
+            padding: .5rem 0 1rem;
+            min-height: 50vh;
+        }
+        .msg {
+            max-width: 85%;
+            padding: .85rem 1rem;
+            border-radius: 12px;
+            white-space: pre-wrap;
+            line-height: 1.45;
+        }
+        .msg.user {
+            align-self: flex-end;
+            background: var(--user);
+            color: #04111a;
+        }
+        .msg.assistant {
+            align-self: flex-start;
+            background: var(--agent);
+        }
+        .empty {
+            color: var(--muted);
+            text-align: center;
+            margin: auto;
+        }
+        .loading {
+            display: none;
+            align-self: flex-start;
+            align-items: center;
+            gap: .75rem;
+            background: var(--agent);
+            padding: .85rem 1rem;
+            border-radius: 12px;
+            max-width: 85%;
+        }
+        .loading.visible {
+            display: flex;
+        }
+        .spinner {
+            width: 22px;
+            height: 22px;
+            border: 3px solid rgba(226, 232, 240, .25);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            flex-shrink: 0;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            color: var(--muted);
+            font-size: .95rem;
+        }
+        .loading-text strong {
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+        }
+        form {
+            display: flex;
+            gap: .5rem;
+            background: var(--panel);
+            padding: .75rem;
+            border-radius: 12px;
+        }
+        form.busy {
+            opacity: .7;
+            pointer-events: none;
+        }
+        input[type="text"] {
+            flex: 1;
+            border: none;
+            border-radius: 8px;
+            padding: .75rem 1rem;
+            font: inherit;
+            background: #0f172a;
+            color: var(--text);
+        }
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: .75rem 1.25rem;
+            font: inherit;
+            font-weight: 700;
+            background: var(--accent);
+            color: #082f49;
+            cursor: pointer;
+            min-width: 5.5rem;
+        }
+        button:hover { filter: brightness(1.08); }
+        button:disabled {
+            cursor: wait;
+            filter: none;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Deploy Agent</h1>
+    <p>Ask the AI agent to deploy your application to a server (simulation).</p>
+</header>
+<main>
+    <div id="chat">
+        <div th:if="${#lists.isEmpty(messages)}" class="empty" id="emptyHint">
+            Example: Deploy payments-api version 1.2.0 to staging
+        </div>
+        <div th:each="m : ${messages}"
+             th:class="'msg ' + ${m.role}"
+             th:text="${m.content}"></div>
+        <div id="loading" class="loading" aria-live="polite">
+            <div class="spinner" aria-hidden="true"></div>
+            <div class="loading-text">
+                Agent is working… <strong id="seconds">0</strong>s
+            </div>
+        </div>
+    </div>
+    <form id="chatForm" method="post" action="/chat">
+        <input id="messageInput" type="text" name="message"
+               placeholder="Describe the deployment…" required autofocus>
+        <button id="sendBtn" type="submit">Send</button>
+    </form>
+</main>
+<script>
+    const chat = document.getElementById('chat');
+    const form = document.getElementById('chatForm');
+    const loading = document.getElementById('loading');
+    const secondsEl = document.getElementById('seconds');
+    const sendBtn = document.getElementById('sendBtn');
+    const messageInput = document.getElementById('messageInput');
+    const emptyHint = document.getElementById('emptyHint');
+
+    chat.scrollTop = chat.scrollHeight;
+
+    form.addEventListener('submit', function () {
+        if (emptyHint) {
+            emptyHint.style.display = 'none';
+        }
+
+        // Show the user's message immediately while waiting
+        const pending = document.createElement('div');
+        pending.className = 'msg user';
+        pending.textContent = messageInput.value;
+        chat.insertBefore(pending, loading);
+
+        loading.classList.add('visible');
+        form.classList.add('busy');
+        sendBtn.disabled = true;
+        sendBtn.textContent = '…';
+        messageInput.readOnly = true;
+        chat.scrollTop = chat.scrollHeight;
+
+        let seconds = 0;
+        secondsEl.textContent = '0';
+        window.setInterval(function () {
+            seconds += 1;
+            secondsEl.textContent = String(seconds);
+        }, 1000);
+    });
+</script>
+</body>
+</html>
