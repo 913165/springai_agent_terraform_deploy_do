@@ -27,10 +27,10 @@ public class DeployChatController {
                                 DeploymentSimulationTool deploymentSimulationTool) {
         this.chatClient = chatClientBuilder
                 .defaultSystem("""
-                        You are a deployment AI agent. Help the user deploy applications to servers.
-                        You MUST call the simulateDeployment tool whenever the user asks to deploy or
-                        simulate a deployment. Extract application name, environment, and optional version.
-                        After the tool returns, summarize the result clearly including deploymentId and status.
+                        You are a deployment AI agent. Help the user deploy applications using Terraform.
+                        You MUST call the simulateDeployment tool whenever the user asks to deploy,
+                        apply, or simulate a deployment. Extract application name, environment, and optional version.
+                        After the tool returns, summarize success/failure clearly using the terraform output.
                         """)
                 .defaultTools(deploymentSimulationTool)
                 .build();
