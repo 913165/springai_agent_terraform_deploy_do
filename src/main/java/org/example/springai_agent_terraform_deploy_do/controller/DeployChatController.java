@@ -1,5 +1,7 @@
 package org.example.springai_agent_terraform_deploy_do.controller;
 
+import org.example.springai_agent_terraform_deploy_do.config.ApplicationCatalog;
+import org.example.springai_agent_terraform_deploy_do.tools.ApplicationCatalogTool;
 import org.example.springai_agent_terraform_deploy_do.tools.DeploymentSimulationTool;
 import org.example.springai_agent_terraform_deploy_do.tools.JenkinsDeploymentTool;
 import org.slf4j.Logger;
@@ -23,20 +25,28 @@ public class DeployChatController {
     private static final Logger log = LoggerFactory.getLogger(DeployChatController.class);
 
     private final ChatClient chatClient;
+    private final ApplicationCatalog applicationCatalog;
 
     public DeployChatController(ChatClient.Builder chatClientBuilder,
                                 DeploymentSimulationTool deploymentSimulationTool,
-                                JenkinsDeploymentTool jenkinsDeploymentTool) {
+                                JenkinsDeploymentTool jenkinsDeploymentTool,
+                                ApplicationCatalogTool applicationCatalogTool,
+                                ApplicationCatalog applicationCatalog) {
+        this.applicationCatalog = applicationCatalog;
         this.chatClient = chatClientBuilder
                 .defaultSystem("""
                         You are a deployment AI agent. Help the user deploy applications.
+                        - Use listApplications when the user asks which apps exist or which Jenkins jobs are available.
                         - Use simulateDeployment for direct Kubernetes/Terraform deploys (terraform/ directory).
-                        - Use deployViaJenkins when the user asks to deploy via Jenkins or trigger a Jenkins job
-                          (jenkins_dir terraform apply).
+                        - Use deployViaJenkins when the user asks to deploy via Jenkins AND the message indicates
+                          the user already approved (e.g. contains "approved" or is an explicit approved deploy).
+                          Pass the registered application name (e.g. spring-test, order-api).
+                        - If the user has not approved yet, do NOT call deploy tools; remind them to Approve or Cancel
+                          in the chat confirmation UI.
                         Extract application name and any optional job/environment/version details.
                         After a tool returns, summarize success/failure clearly using the tool output.
                         """)
-                .defaultTools(deploymentSimulationTool, jenkinsDeploymentTool)
+                .defaultTools(deploymentSimulationTool, jenkinsDeploymentTool, applicationCatalogTool)
                 .build();
     }
 
@@ -45,6 +55,7 @@ public class DeployChatController {
         if (!model.containsAttribute("messages")) {
             model.addAttribute("messages", new ArrayList<Map<String, String>>());
         }
+        addApplications(model);
         return "chat";
     }
 
@@ -70,6 +81,11 @@ public class DeployChatController {
         log.info(">>> CHAT assistant reply: {}", reply);
         messages.add(Map.of("role", "assistant", "content", reply != null ? reply : "(no response)"));
         model.addAttribute("messages", messages);
+        addApplications(model);
         return "chat";
+    }
+
+    private void addApplications(Model model) {
+        model.addAttribute("applications", applicationCatalog.values());
     }
 }

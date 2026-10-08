@@ -1,5 +1,7 @@
 package org.example.springai_agent_terraform_deploy_do.tools;
 
+import org.example.springai_agent_terraform_deploy_do.config.ApplicationCatalog;
+import org.example.springai_agent_terraform_deploy_do.config.ApplicationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
@@ -13,12 +15,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Component
 public class JenkinsDeploymentTool {
 
     private static final Logger log = LoggerFactory.getLogger(JenkinsDeploymentTool.class);
+
+    private final ApplicationCatalog applicationCatalog;
 
     @Value("${app.jenkins.terraform.dir:jenkins_dir}")
     private String jenkinsTerraformDir;
@@ -29,9 +35,13 @@ public class JenkinsDeploymentTool {
     @Value("${app.terraform.timeout-minutes:15}")
     private long timeoutMinutes;
 
-    @Tool(description = "Trigger a Jenkins deployment by running terraform apply in the jenkins_dir directory. Use when the user asks to deploy via Jenkins or trigger a Jenkins job.")
+    public JenkinsDeploymentTool(ApplicationCatalog applicationCatalog) {
+        this.applicationCatalog = applicationCatalog;
+    }
+
+    @Tool(description = "Trigger a Jenkins deployment by running terraform apply in the jenkins_dir directory. Resolves the Jenkins job from registered ApplicationConfig by application name. Use when the user asks to deploy via Jenkins.")
     public String deployViaJenkins(
-            @ToolParam(description = "Application or service name being deployed") String applicationName,
+            @ToolParam(description = "Application or service name being deployed (must match a registered application name)") String applicationName,
             @ToolParam(description = "Optional Jenkins job name override", required = false) String jobName) {
 
         System.out.println("============================================================");
@@ -47,7 +57,18 @@ public class JenkinsDeploymentTool {
         log.info(">>> TOOL deployViaJenkins START application={}, job={}, dir={}, executable={}",
                 applicationName, jobName, jenkinsTerraformDir, terraformExecutable);
 
-        String resolvedJob = (jobName == null || jobName.isBlank()) ? "(from terraform.tfvars)" : jobName.trim();
+        String resolvedJob = resolveJenkinsJob(applicationName, jobName);
+        if (resolvedJob == null) {
+            String known = applicationCatalog.values().stream()
+                    .map(ApplicationConfig::name)
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse("(none)");
+            String err = "Unknown application '%s'. Registered apps: %s. Use listApplications to see details."
+                    .formatted(applicationName, known);
+            System.out.println(">>> TOOL deployViaJenkins ERROR: " + err);
+            log.error(err);
+            return err;
+        }
         System.out.println(">>> resolvedJob=" + resolvedJob);
 
         File workingDir = resolveJenkinsDir();
@@ -69,9 +90,9 @@ public class JenkinsDeploymentTool {
 
         try {
             System.out.println(">>> STEP: starting terraform apply ...");
-            log.info(">>> STEP: starting terraform apply in {}", workingDir.getAbsolutePath());
+            log.info(">>> STEP: starting terraform apply in {} job={}", workingDir.getAbsolutePath(), resolvedJob);
 
-            CommandResult applyResult = runTerraformApply(workingDir);
+            CommandResult applyResult = runTerraformApply(workingDir, resolvedJob);
 
             System.out.println(">>> STEP: terraform apply finished");
             System.out.println(">>> exitCode=" + applyResult.exitCode());
@@ -139,6 +160,15 @@ public class JenkinsDeploymentTool {
         }
     }
 
+    private String resolveJenkinsJob(String applicationName, String jobNameOverride) {
+        if (jobNameOverride != null && !jobNameOverride.isBlank()) {
+            return jobNameOverride.trim();
+        }
+        return applicationCatalog.findByName(applicationName)
+                .map(ApplicationConfig::jenkinsJob)
+                .orElse(null);
+    }
+
     private File resolveJenkinsDir() {
         System.out.println(">>> resolveJenkinsDir: input=" + jenkinsTerraformDir);
         File dir = new File(jenkinsTerraformDir);
@@ -151,12 +181,17 @@ public class JenkinsDeploymentTool {
         return dir;
     }
 
-    private CommandResult runTerraformApply(File workingDir) throws IOException, InterruptedException {
-        ProcessBuilder processBuilder = new ProcessBuilder(
-                terraformExecutable,
-                "apply",
-                "-auto-approve"
-        );
+    private CommandResult runTerraformApply(File workingDir, String jenkinsJob)
+            throws IOException, InterruptedException {
+
+        List<String> command = new ArrayList<>();
+        command.add(terraformExecutable);
+        command.add("apply");
+        command.add("-auto-approve");
+        command.add("-var");
+        command.add("jenkins_job=" + jenkinsJob);
+
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.directory(workingDir);
         processBuilder.redirectErrorStream(true);
 

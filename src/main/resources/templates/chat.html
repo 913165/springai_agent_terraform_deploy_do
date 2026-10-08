@@ -228,6 +228,45 @@
             color: var(--text-strong);
             border-left-color: var(--accent);
         }
+        .app-list {
+            display: flex;
+            flex-direction: column;
+            gap: .15rem;
+            padding: 0 .35rem .35rem;
+        }
+        .app-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text);
+            padding: .55rem .65rem;
+            cursor: pointer;
+            font: inherit;
+        }
+        .app-item:hover {
+            background: var(--rail-active);
+            border-color: var(--border);
+        }
+        .app-item .app-name {
+            display: block;
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--text-strong);
+        }
+        .app-item .app-job {
+            display: block;
+            margin-top: .15rem;
+            font-size: .68rem;
+            color: var(--muted);
+        }
+        .app-empty {
+            padding: .55rem .85rem;
+            color: var(--muted);
+            font-size: .75rem;
+        }
         .menu-spacer { flex: 1; }
         .menu-foot {
             text-align: left;
@@ -237,6 +276,52 @@
             text-transform: uppercase;
             letter-spacing: .08em;
             border-top: 1px solid var(--border);
+        }
+        .app-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .8rem;
+        }
+        .app-table th,
+        .app-table td {
+            text-align: left;
+            padding: .55rem .65rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+        .app-table th {
+            color: var(--muted);
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            font-weight: 700;
+            background: var(--tab-bar);
+        }
+        .app-table td.name {
+            color: var(--text-strong);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .app-table td.job {
+            font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+            font-size: .74rem;
+            color: var(--accent);
+        }
+        .app-table button.use-app {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--theme-btn);
+            color: var(--text);
+            font: inherit;
+            font-size: .72rem;
+            font-weight: 600;
+            padding: .3rem .55rem;
+            cursor: pointer;
+        }
+        .app-table button.use-app:hover {
+            background: var(--theme-btn-active);
+            color: var(--accent-text);
+            border-color: transparent;
         }
 
         /* Large middle editor area */
@@ -520,6 +605,89 @@
         #sendBtn.busy .icon-wait { display: block; }
         #sendBtn .icon-wait { display: none; }
 
+        .confirm-card {
+            align-self: flex-start;
+            width: min(100%, 22rem);
+            background: var(--agent);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: .75rem;
+            font-size: .8rem;
+        }
+        .confirm-card h3 {
+            margin: 0 0 .35rem;
+            font-size: .85rem;
+            color: var(--text-strong);
+        }
+        .confirm-card p {
+            margin: 0 0 .65rem;
+            color: var(--muted);
+            font-size: .75rem;
+            line-height: 1.4;
+        }
+        .confirm-options {
+            display: flex;
+            flex-direction: column;
+            gap: .35rem;
+            margin-bottom: .75rem;
+        }
+        .confirm-option {
+            display: flex;
+            gap: .5rem;
+            align-items: flex-start;
+            padding: .45rem .5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            background: var(--surface-2);
+        }
+        .confirm-option:hover {
+            border-color: var(--accent);
+        }
+        .confirm-option input {
+            margin-top: .15rem;
+        }
+        .confirm-option .opt-name {
+            display: block;
+            font-weight: 600;
+            color: var(--text-strong);
+        }
+        .confirm-option .opt-meta {
+            display: block;
+            margin-top: .1rem;
+            font-size: .68rem;
+            color: var(--muted);
+        }
+        .confirm-actions {
+            display: flex;
+            gap: .4rem;
+            justify-content: flex-end;
+        }
+        .confirm-actions button {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font: inherit;
+            font-size: .75rem;
+            font-weight: 600;
+            padding: .4rem .75rem;
+            cursor: pointer;
+        }
+        .btn-cancel {
+            background: var(--theme-btn);
+            color: var(--text);
+        }
+        .btn-approve {
+            background: var(--theme-btn-active);
+            color: var(--accent-text);
+            border-color: transparent;
+        }
+        .msg.system-cancel {
+            align-self: flex-start;
+            background: var(--agent);
+            color: var(--muted);
+            border-style: dashed;
+        }
+
         @media (max-width: 900px) {
             .workspace {
                 flex-wrap: wrap;
@@ -570,15 +738,22 @@
 </header>
 
 <div class="workspace" id="workspace">
-    <!-- Wider left menu window -->
-    <aside class="menu-rail" id="menuPanel" aria-label="Menu">
-        <div class="menu-title">Project</div>
-        <div class="menu-item active" title="Project"><span class="code">Pr</span><span>Project</span></div>
-        <div class="menu-item" title="Deploy"><span class="code">Dp</span><span>Deploy</span></div>
-        <div class="menu-item" title="Jenkins"><span class="code">Jk</span><span>Jenkins</span></div>
-        <div class="menu-item" title="Settings"><span class="code">St</span><span>Settings</span></div>
+    <!-- Left applications list -->
+    <aside class="menu-rail" id="menuPanel" aria-label="Applications">
+        <div class="menu-title">Applications</div>
+        <div class="app-list" th:if="${applications != null and !#lists.isEmpty(applications)}">
+            <button type="button" class="app-item use-app"
+                    th:each="app : ${applications}"
+                    th:attr="data-app=${app.name}, title=${app.description}">
+                <span class="app-name" th:text="${app.name}">spring-test</span>
+                <span class="app-job" th:text="${app.jenkinsJob}">spring-test-deployment</span>
+            </button>
+        </div>
+        <div class="app-empty" th:if="${applications == null or #lists.isEmpty(applications)}">
+            No applications registered.
+        </div>
         <div class="menu-spacer"></div>
-        <div class="menu-foot">Menu</div>
+        <div class="menu-foot">Catalog</div>
     </aside>
 
     <div class="splitter" id="splitLeft" role="separator" aria-orientation="vertical"
@@ -587,18 +762,41 @@
     <!-- Large middle editor / future workspace -->
     <section class="editor-panel" id="editorPanel" aria-label="Workspace">
         <div class="editor-tabs">
-            <div class="editor-tab active"><span class="dot"></span> workspace.future</div>
+            <div class="editor-tab active"><span class="dot"></span> applications</div>
             <div class="editor-tab">deploy.plan</div>
             <div class="editor-tab">jenkins.job</div>
         </div>
         <div class="editor-body">
             <div class="editor-intro">
-                <h2>Main workspace</h2>
-                <p>Reserved for future development — logs, status, plans, and deploy details will live here.</p>
+                <h2>Registered applications</h2>
+                <p>Select an application, then Approve or Cancel in chat before sending.</p>
             </div>
-            <div class="editor-canvas">
-                Future development area<br>
-                Drag the midlines to resize panels.
+            <div class="editor-canvas" style="align-items: stretch; justify-content: flex-start; padding: 0;">
+                <table class="app-table" th:if="${applications != null and !#lists.isEmpty(applications)}">
+                    <thead>
+                    <tr>
+                        <th>Application</th>
+                        <th>Jenkins job</th>
+                        <th>Description</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="app : ${applications}">
+                        <td class="name" th:text="${app.name}">spring-test</td>
+                        <td class="job" th:text="${app.jenkinsJob}">spring-test-deployment</td>
+                        <td th:text="${app.description}">Spring Test Application</td>
+                        <td>
+                            <button type="button" class="use-app"
+                                    th:attr="data-app=${app.name}"
+                                    th:text="'Deploy'">Deploy</button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div class="app-empty" th:if="${applications == null or #lists.isEmpty(applications)}">
+                    No applications registered.
+                </div>
             </div>
         </div>
         <div class="editor-status">
@@ -620,7 +818,7 @@
         </div>
         <div id="chat">
             <div th:if="${#lists.isEmpty(messages)}" class="empty" id="emptyHint">
-                Example: Deploy payments-api version 1.2.0 to staging
+                Example: Deploy spring-test via Jenkins
             </div>
             <div th:each="m : ${messages}"
                  th:class="'msg ' + ${m.role}"
@@ -652,6 +850,9 @@
     </section>
 </div>
 
+<script th:inline="javascript">
+    const APP_CATALOG = /*[[${applications}]]*/ [];
+</script>
 <script>
     (function () {
         const root = document.documentElement;
@@ -758,12 +959,162 @@
     const messageInput = document.getElementById('messageInput');
     const emptyHint = document.getElementById('emptyHint');
 
+    let approvalGranted = false;
+    let confirmCard = null;
+
     chat.scrollTop = chat.scrollHeight;
 
-    form.addEventListener('submit', function () {
+    function isDeployIntent(text) {
+        const t = (text || '').toLowerCase();
+        return t.includes('deploy') || t.includes('jenkins');
+    }
+
+    function selectedAppName() {
+        if (!confirmCard) return null;
+        const checked = confirmCard.querySelector('input[name="confirmApp"]:checked');
+        return checked ? checked.value : null;
+    }
+
+    function removeConfirmCard() {
+        if (confirmCard && confirmCard.parentNode) {
+            confirmCard.parentNode.removeChild(confirmCard);
+        }
+        confirmCard = null;
+        sendBtn.disabled = false;
+        sendBtn.title = 'Send';
+    }
+
+    function appendAssistantNote(text, extraClass) {
+        if (emptyHint) emptyHint.style.display = 'none';
+        const note = document.createElement('div');
+        note.className = 'msg assistant' + (extraClass ? ' ' + extraClass : '');
+        note.textContent = text;
+        chat.insertBefore(note, loading);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function showConfirmCard(preselectApp) {
+        removeConfirmCard();
+        approvalGranted = false;
+
+        const apps = Array.isArray(APP_CATALOG) ? APP_CATALOG : [];
+        if (apps.length === 0) {
+            appendAssistantNote('No applications are registered to approve.');
+            return;
+        }
+
+        if (emptyHint) emptyHint.style.display = 'none';
+
+        const card = document.createElement('div');
+        card.className = 'confirm-card';
+        card.setAttribute('role', 'dialog');
+        card.setAttribute('aria-label', 'Approve deployment');
+
+        const title = document.createElement('h3');
+        title.textContent = 'Choose application & confirm';
+        card.appendChild(title);
+
+        const help = document.createElement('p');
+        help.textContent = 'Select an option, then Approve to enable Send, or Cancel to abort.';
+        card.appendChild(help);
+
+        const options = document.createElement('div');
+        options.className = 'confirm-options';
+
+        let defaultName = preselectApp;
+        if (!defaultName && messageInput.value) {
+            const match = apps.find(function (a) {
+                return messageInput.value.toLowerCase().includes(String(a.name).toLowerCase());
+            });
+            if (match) defaultName = match.name;
+        }
+        if (!defaultName) defaultName = apps[0].name;
+
+        apps.forEach(function (app, idx) {
+            const label = document.createElement('label');
+            label.className = 'confirm-option';
+
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = 'confirmApp';
+            radio.value = app.name;
+            radio.checked = app.name === defaultName || (!defaultName && idx === 0);
+
+            const body = document.createElement('span');
+            const nameEl = document.createElement('span');
+            nameEl.className = 'opt-name';
+            nameEl.textContent = app.name;
+            const meta = document.createElement('span');
+            meta.className = 'opt-meta';
+            meta.textContent = app.jenkinsJob + ' — ' + app.description;
+            body.appendChild(nameEl);
+            body.appendChild(meta);
+
+            label.appendChild(radio);
+            label.appendChild(body);
+            options.appendChild(label);
+        });
+        card.appendChild(options);
+
+        const actions = document.createElement('div');
+        actions.className = 'confirm-actions';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'btn-cancel';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.addEventListener('click', function () {
+            removeConfirmCard();
+            approvalGranted = false;
+            messageInput.value = '';
+            appendAssistantNote('Cancelled.', 'system-cancel');
+        });
+
+        const approveBtn = document.createElement('button');
+        approveBtn.type = 'button';
+        approveBtn.className = 'btn-approve';
+        approveBtn.textContent = 'Approve';
+        approveBtn.addEventListener('click', function () {
+            const appName = selectedAppName();
+            if (!appName) return;
+            messageInput.value = 'Deploy ' + appName + ' via Jenkins (approved)';
+            approvalGranted = true;
+            removeConfirmCard();
+            appendAssistantNote('Approved: ' + appName + '. Click Send (>) to continue.');
+            messageInput.focus();
+            sendBtn.disabled = false;
+            sendBtn.title = 'Send approved deploy';
+        });
+
+        actions.appendChild(cancelBtn);
+        actions.appendChild(approveBtn);
+        card.appendChild(actions);
+
+        confirmCard = card;
+        chat.insertBefore(card, loading);
+        chat.scrollTop = chat.scrollHeight;
+
+        // Block send until Approve
+        sendBtn.disabled = true;
+        sendBtn.title = 'Approve or Cancel first';
+        messageInput.value = 'Deploy ' + defaultName + ' via Jenkins';
+    }
+
+    form.addEventListener('submit', function (e) {
+        const text = messageInput.value || '';
+
+        // Deploy/Jenkins requests require Approve first
+        if (isDeployIntent(text) && !approvalGranted) {
+            e.preventDefault();
+            showConfirmCard(null);
+            return;
+        }
+
         if (emptyHint) {
             emptyHint.style.display = 'none';
         }
+
+        removeConfirmCard();
 
         const pending = document.createElement('div');
         pending.className = 'msg user';
@@ -790,6 +1141,14 @@
             e.preventDefault();
             form.requestSubmit();
         }
+    });
+
+    document.querySelectorAll('.use-app').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const appName = btn.getAttribute('data-app');
+            if (!appName) return;
+            showConfirmCard(appName);
+        });
     });
 </script>
 </body>
