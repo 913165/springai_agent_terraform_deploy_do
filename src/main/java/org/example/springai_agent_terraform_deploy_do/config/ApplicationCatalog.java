@@ -10,6 +10,8 @@ import java.util.Optional;
 /**
  * In-code registry of deployable applications.
  * Put the {@code Map<String, ApplicationConfig>} here.
+ * {@code healthUrl} should point at Prometheus/actuator health for that app
+ * (e.g. {@code http://host:port/actuator/prometheus} or {@code /actuator/health}).
  */
 @Component
 public class ApplicationCatalog {
@@ -21,12 +23,14 @@ public class ApplicationCatalog {
         apps.put("spring-test", new ApplicationConfig(
                 "spring-test",
                 "spring-test-deployment",
-                "Spring Test Application"
+                "Spring Test Application",
+                "http://64.225.85.235/actuator/prometheus"
         ));
         apps.put("order-api", new ApplicationConfig(
                 "order-api",
                 "order-api-deployment",
-                "Order API Application"
+                "Order API Application",
+                "http://64.225.85.235/actuator/prometheus"
         ));
         this.applications = Map.copyOf(apps);
     }

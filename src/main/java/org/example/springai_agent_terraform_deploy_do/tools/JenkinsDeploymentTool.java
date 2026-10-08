@@ -2,6 +2,7 @@ package org.example.springai_agent_terraform_deploy_do.tools;
 
 import org.example.springai_agent_terraform_deploy_do.config.ApplicationCatalog;
 import org.example.springai_agent_terraform_deploy_do.config.ApplicationConfig;
+import org.example.springai_agent_terraform_deploy_do.service.ApplicationHealthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
@@ -25,6 +26,7 @@ public class JenkinsDeploymentTool {
     private static final Logger log = LoggerFactory.getLogger(JenkinsDeploymentTool.class);
 
     private final ApplicationCatalog applicationCatalog;
+    private final ApplicationHealthService applicationHealthService;
 
     @Value("${app.jenkins.terraform.dir:jenkins_dir}")
     private String jenkinsTerraformDir;
@@ -35,27 +37,32 @@ public class JenkinsDeploymentTool {
     @Value("${app.terraform.timeout-minutes:15}")
     private long timeoutMinutes;
 
-    public JenkinsDeploymentTool(ApplicationCatalog applicationCatalog) {
+    public JenkinsDeploymentTool(ApplicationCatalog applicationCatalog,
+                                 ApplicationHealthService applicationHealthService) {
         this.applicationCatalog = applicationCatalog;
+        this.applicationHealthService = applicationHealthService;
     }
 
-    @Tool(description = "Trigger a Jenkins deployment by running terraform apply in the jenkins_dir directory. Resolves the Jenkins job from registered ApplicationConfig by application name. Use when the user asks to deploy via Jenkins.")
+    @Tool(description = "Trigger a Jenkins deployment by running terraform apply in the jenkins_dir directory. Resolves the Jenkins job from registered ApplicationConfig by application name. If Prometheus health is DOWN, approved must be true — never rollback and never deploy a DOWN app without approval.")
     public String deployViaJenkins(
             @ToolParam(description = "Application or service name being deployed (must match a registered application name)") String applicationName,
+            @ToolParam(description = "Must be true when the user clicked Approve in the UI (required if app health is DOWN)", required = false) Boolean approved,
             @ToolParam(description = "Optional Jenkins job name override", required = false) String jobName) {
 
+        boolean isApproved = Boolean.TRUE.equals(approved);
         System.out.println("============================================================");
         System.out.println(">>> TOOL deployViaJenkins START");
         System.out.println(">>> timestamp=" + Instant.now());
         System.out.println(">>> applicationName=" + applicationName);
+        System.out.println(">>> approved=" + isApproved);
         System.out.println(">>> jobName(raw)=" + jobName);
         System.out.println(">>> configured jenkinsTerraformDir=" + jenkinsTerraformDir);
         System.out.println(">>> configured terraformExecutable=" + terraformExecutable);
         System.out.println(">>> configured timeoutMinutes=" + timeoutMinutes);
         System.out.println(">>> user.dir=" + System.getProperty("user.dir"));
         System.out.println("============================================================");
-        log.info(">>> TOOL deployViaJenkins START application={}, job={}, dir={}, executable={}",
-                applicationName, jobName, jenkinsTerraformDir, terraformExecutable);
+        log.info(">>> TOOL deployViaJenkins START application={}, approved={}, job={}, dir={}, executable={}",
+                applicationName, isApproved, jobName, jenkinsTerraformDir, terraformExecutable);
 
         String resolvedJob = resolveJenkinsJob(applicationName, jobName);
         if (resolvedJob == null) {
@@ -70,6 +77,32 @@ public class JenkinsDeploymentTool {
             return err;
         }
         System.out.println(">>> resolvedJob=" + resolvedJob);
+
+        ApplicationConfig app = applicationCatalog.findByName(applicationName).orElse(null);
+        if (app != null) {
+            ApplicationHealthService.HealthStatus health = applicationHealthService.checkOne(app);
+            System.out.println(">>> prometheusHealth=" + health.status() + " detail=" + health.detail());
+            if ("DOWN".equalsIgnoreCase(health.status()) && !isApproved) {
+                String err = """
+                        BLOCKED: application '%s' Prometheus health is DOWN (%s).
+                        No deploy/rollback was started.
+                        Ask the user to Approve in the chat UI, then call again with approved=true.
+                        """.formatted(applicationName, health.detail()).trim();
+                System.out.println(">>> TOOL deployViaJenkins ERROR: " + err);
+                log.warn(err);
+                return err;
+            }
+            if (!isApproved) {
+                String err = """
+                        BLOCKED: deploy requires explicit user approval.
+                        No deploy/rollback was started.
+                        Ask the user to Approve in the chat UI, then call again with approved=true.
+                        """.trim();
+                System.out.println(">>> TOOL deployViaJenkins ERROR: " + err);
+                log.warn(err);
+                return err;
+            }
+        }
 
         File workingDir = resolveJenkinsDir();
         System.out.println(">>> resolved workingDir=" + workingDir.getAbsolutePath());

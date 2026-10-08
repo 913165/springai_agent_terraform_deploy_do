@@ -36,13 +36,14 @@ public class DeployChatController {
         this.chatClient = chatClientBuilder
                 .defaultSystem("""
                         You are a deployment AI agent. Help the user deploy applications.
+                        - Never roll back automatically. Never deploy or change anything without explicit user approval.
                         - Use listApplications when the user asks which apps exist or which Jenkins jobs are available.
-                        - Use simulateDeployment for direct Kubernetes/Terraform deploys (terraform/ directory).
-                        - Use deployViaJenkins when the user asks to deploy via Jenkins AND the message indicates
-                          the user already approved (e.g. contains "approved" or is an explicit approved deploy).
-                          Pass the registered application name (e.g. spring-test, order-api).
-                        - If the user has not approved yet, do NOT call deploy tools; remind them to Approve or Cancel
-                          in the chat confirmation UI.
+                        - Use simulateDeployment for direct Kubernetes/Terraform deploys (terraform/ directory) only if approved.
+                        - Use deployViaJenkins only when the user message contains "(approved)" / explicit approval.
+                          Pass approved=true and the registered application name (e.g. spring-test, order-api).
+                        - If Prometheus health is DOWN and the user has not approved, do nothing except explain that
+                          Approve is required. Do not invent a rollback.
+                        - If the user cancelled, acknowledge cancellation only — do not call deploy tools.
                         Extract application name and any optional job/environment/version details.
                         After a tool returns, summarize success/failure clearly using the tool output.
                         """)

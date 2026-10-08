@@ -99,7 +99,21 @@
             color: var(--muted);
             font-size: .72rem;
         }
-        .theme-toggle button {
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            min-width: 0;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+        .theme-toggle button,
+        .home-btn {
             border: 1px solid var(--border);
             border-radius: 999px;
             width: 2rem;
@@ -110,13 +124,16 @@
             background: var(--theme-btn);
             color: var(--text);
             cursor: pointer;
+            text-decoration: none;
         }
-        .theme-toggle button:hover {
+        .theme-toggle button:hover,
+        .home-btn:hover {
             background: var(--theme-btn-active);
             color: var(--accent-text);
             border-color: transparent;
         }
-        .theme-toggle button svg {
+        .theme-toggle button svg,
+        .home-btn svg {
             width: 1.05rem;
             height: 1.05rem;
             display: block;
@@ -322,6 +339,135 @@
             background: var(--theme-btn-active);
             color: var(--accent-text);
             border-color: transparent;
+        }
+        .health-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            border-radius: 999px;
+            padding: .15rem .5rem;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            border: 1px solid var(--border);
+            background: var(--theme-btn);
+            color: var(--muted);
+            white-space: nowrap;
+        }
+        .health-badge::before {
+            content: "";
+            width: .45rem;
+            height: .45rem;
+            border-radius: 50%;
+            background: var(--muted);
+        }
+        .health-badge.up {
+            color: #0f5132;
+            background: #d1e7dd;
+            border-color: #a3cfbb;
+        }
+        .health-badge.up::before { background: #198754; }
+        .health-badge.down {
+            color: #842029;
+            background: #f8d7da;
+            border-color: #f1aeb5;
+        }
+        .health-badge.down::before { background: #dc3545; }
+        .health-badge.unknown {
+            color: var(--muted);
+        }
+        .health-badge.deploying {
+            color: #084298;
+            background: #cfe2ff;
+            border-color: #9ec5fe;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .health-badge.deploying::before {
+            background: #0d6efd;
+            animation: healthPulse 1s ease-in-out infinite;
+        }
+        .health-badge.deployed {
+            color: #664d03;
+            background: #fff3cd;
+            border-color: #ffecb5;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .health-badge.deployed::before { background: #ffc107; }
+        html[data-theme="dark"] .health-badge.up {
+            color: #b7f0cf;
+            background: #163528;
+            border-color: #1f6b45;
+        }
+        html[data-theme="dark"] .health-badge.down {
+            color: #ffc9ce;
+            background: #3a171b;
+            border-color: #7a2e36;
+        }
+        html[data-theme="dark"] .health-badge.deploying {
+            color: #cfe2ff;
+            background: #0b2a4a;
+            border-color: #1a4d80;
+        }
+        html[data-theme="dark"] .health-badge.deployed {
+            color: #ffe69c;
+            background: #3a2f0b;
+            border-color: #6b5a12;
+        }
+        @keyframes healthPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .35; transform: scale(.85); }
+        }
+        .health-dots::after {
+            content: "";
+            display: inline-block;
+            width: 1.1em;
+            text-align: left;
+            animation: healthDots 1.2s steps(4, end) infinite;
+        }
+        @keyframes healthDots {
+            0% { content: ""; }
+            25% { content: "."; }
+            50% { content: ".."; }
+            75% { content: "..."; }
+        }
+        .health-toolbar {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            flex-wrap: wrap;
+            margin-top: .35rem;
+        }
+        .health-meta {
+            margin: 0;
+            font-size: .68rem;
+            color: var(--muted);
+        }
+        #healthRefreshBtn {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--theme-btn);
+            color: var(--text);
+            font: inherit;
+            font-size: .72rem;
+            font-weight: 600;
+            padding: .28rem .65rem;
+            cursor: pointer;
+        }
+        #healthRefreshBtn:hover {
+            background: var(--theme-btn-active);
+            color: var(--accent-text);
+            border-color: transparent;
+        }
+        #healthRefreshBtn:disabled {
+            opacity: .65;
+            cursor: wait;
+        }
+        .app-item .app-health {
+            display: block;
+            margin-top: .25rem;
         }
 
         /* Large middle editor area */
@@ -716,24 +862,35 @@
 </head>
 <body>
 <header>
-    <div class="header-text">
-        <h1>Deploy Agent</h1>
-        <p>Ask the AI agent to deploy your application to a server (simulation).</p>
+    <div class="header-left">
+        <a class="home-btn" href="/" aria-label="Home" title="Home">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 10.5L12 3l9 7.5"></path>
+                <path d="M5 10v10h14V10"></path>
+            </svg>
+        </a>
+        <div class="header-text">
+            <h1>Deploy Agent</h1>
+            <p>Ask the AI agent to deploy your application to a server (simulation).</p>
+        </div>
     </div>
-    <div class="theme-toggle">
-        <button type="button" id="themeToggle" aria-label="Switch to dark theme" title="Toggle theme">
-            <!-- Sun: shown in dark theme (click → light) -->
-            <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="4"></circle>
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
-            </svg>
-            <!-- Moon: shown in light theme (click → dark) -->
-            <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z"></path>
-            </svg>
-        </button>
+    <div class="header-actions">
+        <div class="theme-toggle">
+            <button type="button" id="themeToggle" aria-label="Switch to dark theme" title="Toggle theme">
+                <!-- Sun: shown in dark theme (click → light) -->
+                <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+                </svg>
+                <!-- Moon: shown in light theme (click → dark) -->
+                <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z"></path>
+                </svg>
+            </button>
+        </div>
     </div>
 </header>
 
@@ -763,13 +920,16 @@
     <section class="editor-panel" id="editorPanel" aria-label="Workspace">
         <div class="editor-tabs">
             <div class="editor-tab active"><span class="dot"></span> applications</div>
-            <div class="editor-tab">deploy.plan</div>
-            <div class="editor-tab">jenkins.job</div>
         </div>
         <div class="editor-body">
             <div class="editor-intro">
                 <h2>Registered applications</h2>
-                <p>Select an application, then Approve or Cancel in chat before sending.</p>
+                <p>Select an application, then Approve or Cancel in chat before sending.
+                    Prometheus health refreshes every 20 seconds.</p>
+                <div class="health-toolbar">
+                    <button type="button" id="healthRefreshBtn" title="Check Prometheus health now">Refresh health</button>
+                    <span class="health-meta" id="healthCheckedAt">Last check: —</span>
+                </div>
             </div>
             <div class="editor-canvas" style="align-items: stretch; justify-content: flex-start; padding: 0;">
                 <table class="app-table" th:if="${applications != null and !#lists.isEmpty(applications)}">
@@ -777,6 +937,7 @@
                     <tr>
                         <th>Application</th>
                         <th>Jenkins job</th>
+                        <th>Prometheus health</th>
                         <th>Description</th>
                         <th></th>
                     </tr>
@@ -785,6 +946,9 @@
                     <tr th:each="app : ${applications}">
                         <td class="name" th:text="${app.name}">spring-test</td>
                         <td class="job" th:text="${app.jenkinsJob}">spring-test-deployment</td>
+                        <td>
+                            <span class="health-badge unknown" th:attr="data-health-for=${app.name}">…</span>
+                        </td>
                         <td th:text="${app.description}">Spring Test Application</td>
                         <td>
                             <button type="button" class="use-app"
@@ -813,8 +977,6 @@
     <section class="chat-panel" id="chatPanel" aria-label="AI Chat">
         <div class="tool-header">
             <div class="tool-tab active">AI Chat</div>
-            <div class="tool-tab">Output</div>
-            <div class="tool-actions">Tool Window</div>
         </div>
         <div id="chat">
             <div th:if="${#lists.isEmpty(messages)}" class="empty" id="emptyHint">
@@ -993,7 +1155,7 @@
         chat.scrollTop = chat.scrollHeight;
     }
 
-    function showConfirmCard(preselectApp) {
+    async function showConfirmCard(preselectApp) {
         removeConfirmCard();
         approvalGranted = false;
 
@@ -1005,6 +1167,17 @@
 
         if (emptyHint) emptyHint.style.display = 'none';
 
+        let healthByName = {};
+        try {
+            const res = await fetch('/api/applications/health', { cache: 'no-store' });
+            if (res.ok) {
+                const data = await res.json();
+                (data.applications || []).forEach(function (h) {
+                    healthByName[h.name] = (h.status || 'UNKNOWN').toUpperCase();
+                });
+            }
+        } catch (e) { /* keep unknown */ }
+
         const card = document.createElement('div');
         card.className = 'confirm-card';
         card.setAttribute('role', 'dialog');
@@ -1015,8 +1188,15 @@
         card.appendChild(title);
 
         const help = document.createElement('p');
-        help.textContent = 'Select an option, then Approve to enable Send, or Cancel to abort.';
+        help.textContent = 'If health is DOWN, nothing runs unless you Approve. Cancel aborts with no deploy/rollback.';
         card.appendChild(help);
+
+        const warn = document.createElement('p');
+        warn.id = 'confirmDownWarn';
+        warn.style.display = 'none';
+        warn.style.color = '#842029';
+        warn.textContent = 'Selected app is DOWN. Approve is required — no automatic rollback will run.';
+        card.appendChild(warn);
 
         const options = document.createElement('div');
         options.className = 'confirm-options';
@@ -1030,6 +1210,12 @@
         }
         if (!defaultName) defaultName = apps[0].name;
 
+        function refreshDownWarn() {
+            const name = selectedAppName();
+            const status = healthByName[name] || 'UNKNOWN';
+            warn.style.display = status === 'DOWN' ? 'block' : 'none';
+        }
+
         apps.forEach(function (app, idx) {
             const label = document.createElement('label');
             label.className = 'confirm-option';
@@ -1039,11 +1225,13 @@
             radio.name = 'confirmApp';
             radio.value = app.name;
             radio.checked = app.name === defaultName || (!defaultName && idx === 0);
+            radio.addEventListener('change', refreshDownWarn);
 
+            const status = healthByName[app.name] || 'UNKNOWN';
             const body = document.createElement('span');
             const nameEl = document.createElement('span');
             nameEl.className = 'opt-name';
-            nameEl.textContent = app.name;
+            nameEl.textContent = app.name + ' [' + status + ']';
             const meta = document.createElement('span');
             meta.className = 'opt-meta';
             meta.textContent = app.jenkinsJob + ' — ' + app.description;
@@ -1067,7 +1255,7 @@
             removeConfirmCard();
             approvalGranted = false;
             messageInput.value = '';
-            appendAssistantNote('Cancelled.', 'system-cancel');
+            appendAssistantNote('Cancelled. No deploy or rollback was started.', 'system-cancel');
         });
 
         const approveBtn = document.createElement('button');
@@ -1077,10 +1265,15 @@
         approveBtn.addEventListener('click', function () {
             const appName = selectedAppName();
             if (!appName) return;
+            const status = healthByName[appName] || 'UNKNOWN';
             messageInput.value = 'Deploy ' + appName + ' via Jenkins (approved)';
             approvalGranted = true;
             removeConfirmCard();
-            appendAssistantNote('Approved: ' + appName + '. Click Send (>) to continue.');
+            if (status === 'DOWN') {
+                appendAssistantNote('Approved despite DOWN health for ' + appName + '. Click Send (>) to deploy. No rollback will run.');
+            } else {
+                appendAssistantNote('Approved: ' + appName + '. Click Send (>) to continue.');
+            }
             messageInput.focus();
             sendBtn.disabled = false;
             sendBtn.title = 'Send approved deploy';
@@ -1093,11 +1286,40 @@
         confirmCard = card;
         chat.insertBefore(card, loading);
         chat.scrollTop = chat.scrollHeight;
+        refreshDownWarn();
 
         // Block send until Approve
         sendBtn.disabled = true;
         sendBtn.title = 'Approve or Cancel first';
         messageInput.value = 'Deploy ' + defaultName + ' via Jenkins';
+    }
+
+    const DEPLOY_STATE_KEY = 'deploy-agent-deploy-state';
+
+    function extractAppFromDeployMessage(text) {
+        const m = String(text || '').match(/deploy\s+([a-zA-Z0-9._-]+)/i);
+        return m ? m[1] : null;
+    }
+
+    window.__deployLockedApps = window.__deployLockedApps || new Set();
+
+    function setBadgeState(appName, state, title) {
+        if (!appName) return;
+        document.querySelectorAll('[data-health-for="' + appName + '"]').forEach(function (badge) {
+            if (state === 'deploying') {
+                badge.className = 'health-badge deploying';
+                badge.innerHTML = 'Deploying<span class="health-dots"></span>';
+                window.__deployLockedApps.add(appName);
+            } else if (state === 'deployed') {
+                badge.className = 'health-badge deployed';
+                badge.textContent = 'Deployed';
+                window.__deployLockedApps.add(appName);
+            } else {
+                badge.className = 'health-badge unknown';
+                badge.textContent = state || '…';
+            }
+            badge.title = title || '';
+        });
     }
 
     form.addEventListener('submit', function (e) {
@@ -1115,6 +1337,20 @@
         }
 
         removeConfirmCard();
+
+        if (approvalGranted && isDeployIntent(text)) {
+            const appName = extractAppFromDeployMessage(text);
+            if (appName) {
+                try {
+                    sessionStorage.setItem(DEPLOY_STATE_KEY, JSON.stringify({
+                        app: appName,
+                        phase: 'deploying',
+                        startedAt: Date.now()
+                    }));
+                } catch (err) { /* ignore */ }
+                setBadgeState(appName, 'deploying', 'Deployment in progress');
+            }
+        }
 
         const pending = document.createElement('div');
         pending.className = 'msg user';
@@ -1150,6 +1386,88 @@
             showConfirmCard(appName);
         });
     });
+
+    (function () {
+        const checkedAtEl = document.getElementById('healthCheckedAt');
+        const refreshBtn = document.getElementById('healthRefreshBtn');
+        const lockedApps = window.__deployLockedApps;
+
+        function applyHealth(statuses) {
+            if (!Array.isArray(statuses)) return;
+            statuses.forEach(function (item) {
+                if (lockedApps.has(item.name)) return;
+                const status = (item.status || 'UNKNOWN').toUpperCase();
+                const cls = status === 'UP' ? 'up' : (status === 'DOWN' ? 'down' : 'unknown');
+                document.querySelectorAll('[data-health-for="' + item.name + '"]').forEach(function (badge) {
+                    badge.className = 'health-badge ' + cls;
+                    badge.textContent = status;
+                    badge.title = (item.detail || '') + (item.checkedAt ? ' @ ' + item.checkedAt : '');
+                });
+            });
+        }
+
+        async function refreshHealth(manual) {
+            if (refreshBtn) {
+                refreshBtn.disabled = true;
+                if (manual) refreshBtn.textContent = 'Checking…';
+            }
+            try {
+                const res = await fetch('/api/applications/health', { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                applyHealth(data.applications || []);
+                if (checkedAtEl) {
+                    checkedAtEl.textContent = 'Last check: ' + (data.checkedAt || new Date().toISOString());
+                }
+            } catch (err) {
+                if (checkedAtEl) {
+                    checkedAtEl.textContent = 'Last check failed: ' + err.message;
+                }
+                document.querySelectorAll('[data-health-for]').forEach(function (badge) {
+                    const app = badge.getAttribute('data-health-for');
+                    if (lockedApps.has(app)) return;
+                    badge.className = 'health-badge unknown';
+                    badge.textContent = 'ERR';
+                    badge.title = String(err);
+                });
+            } finally {
+                if (refreshBtn) {
+                    refreshBtn.disabled = false;
+                    refreshBtn.textContent = 'Refresh health';
+                }
+            }
+        }
+
+        function resumeDeployState() {
+            let raw = null;
+            try { raw = sessionStorage.getItem(DEPLOY_STATE_KEY); } catch (e) { return; }
+            if (!raw) return;
+            let state = null;
+            try { state = JSON.parse(raw); } catch (e) { return; }
+            if (!state || !state.app) return;
+
+            setBadgeState(state.app, 'deployed', 'Deployment finished — refreshing health soon');
+
+            window.setTimeout(function () {
+                lockedApps.delete(state.app);
+                try { sessionStorage.removeItem(DEPLOY_STATE_KEY); } catch (e) { /* ignore */ }
+                refreshHealth(false);
+            }, 8000);
+        }
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function () {
+                // Manual refresh always checks live health
+                lockedApps.clear();
+                try { sessionStorage.removeItem(DEPLOY_STATE_KEY); } catch (e) { /* ignore */ }
+                refreshHealth(true);
+            });
+        }
+
+        resumeDeployState();
+        refreshHealth(false);
+        window.setInterval(function () { refreshHealth(false); }, 20000);
+    })();
 </script>
 </body>
 </html>
