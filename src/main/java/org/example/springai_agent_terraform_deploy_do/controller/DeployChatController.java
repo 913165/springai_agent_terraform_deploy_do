@@ -1,6 +1,7 @@
 package org.example.springai_agent_terraform_deploy_do.controller;
 
 import org.example.springai_agent_terraform_deploy_do.tools.DeploymentSimulationTool;
+import org.example.springai_agent_terraform_deploy_do.tools.JenkinsDeploymentTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -24,19 +25,22 @@ public class DeployChatController {
     private final ChatClient chatClient;
 
     public DeployChatController(ChatClient.Builder chatClientBuilder,
-                                DeploymentSimulationTool deploymentSimulationTool) {
+                                DeploymentSimulationTool deploymentSimulationTool,
+                                JenkinsDeploymentTool jenkinsDeploymentTool) {
         this.chatClient = chatClientBuilder
                 .defaultSystem("""
-                        You are a deployment AI agent. Help the user deploy applications using Terraform.
-                        You MUST call the simulateDeployment tool whenever the user asks to deploy,
-                        apply, or simulate a deployment. Extract application name, environment, and optional version.
-                        After the tool returns, summarize success/failure clearly using the terraform output.
+                        You are a deployment AI agent. Help the user deploy applications.
+                        - Use simulateDeployment for direct Kubernetes/Terraform deploys (terraform/ directory).
+                        - Use deployViaJenkins when the user asks to deploy via Jenkins or trigger a Jenkins job
+                          (jenkins_dir terraform apply).
+                        Extract application name and any optional job/environment/version details.
+                        After a tool returns, summarize success/failure clearly using the tool output.
                         """)
-                .defaultTools(deploymentSimulationTool)
+                .defaultTools(deploymentSimulationTool, jenkinsDeploymentTool)
                 .build();
     }
 
-    @GetMapping("/")
+    @GetMapping({"/", "/chat"})
     public String chatPage(Model model) {
         if (!model.containsAttribute("messages")) {
             model.addAttribute("messages", new ArrayList<Map<String, String>>());

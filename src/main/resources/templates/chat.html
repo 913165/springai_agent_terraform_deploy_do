@@ -1,180 +1,755 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Deploy Agent</title>
     <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #1e293b;
-            --user: #0ea5e9;
-            --agent: #334155;
-            --text: #e2e8f0;
-            --muted: #94a3b8;
-            --accent: #22d3ee;
+        :root, [data-theme="dark"] {
+            --bg: #2b2b2b;
+            --surface: #3c3f41;
+            --surface-2: #313335;
+            --editor: #2b2b2b;
+            --border: #323232;
+            --tab-bar: #3c3f41;
+            --tab-active: #4e5254;
+            --text: #bbbbbb;
+            --text-strong: #ffffff;
+            --muted: #808080;
+            --accent: #4a88c7;
+            --accent-text: #ffffff;
+            --user: #365880;
+            --user-text: #e8f1fa;
+            --agent: #45494a;
+            --input-bg: #45494a;
+            --rail: #3c3f41;
+            --rail-active: #2b2b2b;
+            --selection: #214283;
+            --theme-btn: #4e5254;
+            --theme-btn-active: #4a88c7;
+            --placeholder-dash: #5a5a5a;
+            --header-bg: #3c3f41;
+            --splitter: #555555;
+            --splitter-hover: #777777;
+            --radius: 12px;
+        }
+        [data-theme="light"] {
+            --bg: #f2f2f2;
+            --surface: #ffffff;
+            --surface-2: #f7f7f7;
+            --editor: #ffffff;
+            --border: #c4c4c4;
+            --tab-bar: #e8e8e8;
+            --tab-active: #ffffff;
+            --text: #2b2b2b;
+            --text-strong: #000000;
+            --muted: #6e6e6e;
+            --accent: #3574f0;
+            --accent-text: #ffffff;
+            --user: #d6e6ff;
+            --user-text: #0b1f3a;
+            --agent: #ececec;
+            --input-bg: #ffffff;
+            --rail: #e8e8e8;
+            --rail-active: #ffffff;
+            --selection: #c2d8f2;
+            --theme-btn: #dcdcdc;
+            --theme-btn-active: #3574f0;
+            --placeholder-dash: #b0b0b0;
+            --header-bg: #f2f2f2;
+            --splitter: #bdbdbd;
+            --splitter-hover: #8a8a8a;
+            --radius: 12px;
         }
         * { box-sizing: border-box; }
+        html, body { height: 100%; }
         body {
             margin: 0;
-            font-family: Georgia, "Times New Roman", serif;
-            background: linear-gradient(160deg, #0f172a 0%, #164e63 100%);
+            font-family: "JetBrains Mono", "Cascadia Code", "Consolas", "Segoe UI", sans-serif;
+            background: var(--bg);
             color: var(--text);
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
+
+        /* Top app bar — IntelliJ-like */
         header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,.08);
-        }
-        header h1 {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
             margin: 0;
-            font-size: 1.5rem;
-            letter-spacing: .02em;
+            padding: .45rem .75rem;
+            background: var(--header-bg);
+            border: 0;
+            border-bottom: 1px solid var(--border);
+            border-radius: 0;
+            flex-shrink: 0;
         }
-        header p {
-            margin: .35rem 0 0;
-            color: var(--muted);
+        .header-text h1 {
+            margin: 0;
             font-size: .95rem;
+            font-weight: 600;
+            color: var(--text-strong);
+            letter-spacing: .01em;
         }
-        main {
+        .header-text p {
+            margin: .1rem 0 0;
+            color: var(--muted);
+            font-size: .72rem;
+        }
+        .theme-toggle button {
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            display: inline-grid;
+            place-items: center;
+            background: var(--theme-btn);
+            color: var(--text);
+            cursor: pointer;
+        }
+        .theme-toggle button:hover {
+            background: var(--theme-btn-active);
+            color: var(--accent-text);
+            border-color: transparent;
+        }
+        .theme-toggle button svg {
+            width: 1.05rem;
+            height: 1.05rem;
+            display: block;
+        }
+        .theme-toggle .icon-sun,
+        .theme-toggle .icon-moon {
+            display: none;
+        }
+        html[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+        html[data-theme="light"] .theme-toggle .icon-moon { display: block; }
+
+        /* IntelliJ workspace: resizable left | middle | right */
+        .workspace {
             flex: 1;
             display: flex;
+            gap: 0;
+            min-height: 0;
+            border-top: 0;
+            overflow: hidden;
+            padding: 0;
+        }
+        .workspace > * {
+            margin: 0;
+        }
+        .workspace.resizing {
+            cursor: col-resize;
+            user-select: none;
+        }
+        .workspace.resizing iframe,
+        .workspace.resizing * {
+            cursor: col-resize !important;
+        }
+
+        .splitter {
+            flex: 0 0 2px;
+            width: 2px;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            background: var(--splitter);
+            cursor: col-resize;
+            position: relative;
+            z-index: 5;
+            align-self: stretch;
+        }
+        .splitter::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: -4px;
+            right: -4px;
+            background: transparent;
+        }
+        .splitter:hover,
+        .splitter.active {
+            background: var(--splitter-hover);
+        }
+
+        /* Left menu window */
+        .menu-rail {
+            width: 260px;
+            flex: 0 0 auto;
+            background: var(--rail);
+            display: flex;
             flex-direction: column;
-            max-width: 820px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 1rem;
+            align-items: stretch;
+            padding: .5rem 0;
+            gap: .1rem;
+            min-width: 140px;
+            max-width: 50%;
+            overflow: auto;
+            border: 0;
+            border-right: 0;
+            border-radius: 0;
+        }
+        .menu-title {
+            padding: .45rem .85rem .55rem;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: .25rem;
+        }
+        .menu-item {
+            min-height: 34px;
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            padding: 0 .85rem;
+            color: var(--muted);
+            font-size: .8rem;
+            font-weight: 500;
+            letter-spacing: .01em;
+            border-left: 2px solid transparent;
+            cursor: default;
+        }
+        .menu-item .code {
+            width: 1.6rem;
+            flex-shrink: 0;
+            font-size: .68rem;
+            font-weight: 700;
+            opacity: .85;
+        }
+        .menu-item.active {
+            background: var(--rail-active);
+            color: var(--text-strong);
+            border-left-color: var(--accent);
+        }
+        .menu-spacer { flex: 1; }
+        .menu-foot {
+            text-align: left;
+            font-size: .62rem;
+            color: var(--muted);
+            padding: .55rem .85rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Large middle editor area */
+        .editor-panel {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            min-width: 220px;
+            background: var(--editor);
+            overflow: hidden;
+            border: 0;
+            border-radius: 0;
+        }
+        .editor-tabs {
+            display: flex;
+            align-items: stretch;
+            background: var(--tab-bar);
+            border-bottom: 1px solid var(--border);
+            min-height: 32px;
+            overflow-x: auto;
+        }
+        .editor-tab {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            padding: 0 .85rem;
+            font-size: .75rem;
+            color: var(--muted);
+            border-right: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .editor-tab.active {
+            background: var(--tab-active);
+            color: var(--text-strong);
+        }
+        .editor-tab .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            opacity: .7;
+        }
+        .editor-body {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            gap: 0;
+            overflow: auto;
+        }
+        .editor-intro {
+            padding: .65rem .75rem;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .editor-body h2 {
+            margin: 0;
+            font-size: .95rem;
+            color: var(--text-strong);
+            font-weight: 600;
+        }
+        .editor-body p {
+            margin: .25rem 0 0;
+            color: var(--muted);
+            font-size: .8rem;
+            line-height: 1.45;
+            max-width: 52rem;
+        }
+        .editor-canvas {
+            flex: 1;
+            min-height: 220px;
+            margin: 0;
+            border: 0;
+            border-top: 1px solid var(--border);
+            background: var(--surface-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted);
+            font-size: .85rem;
+            text-align: center;
+            padding: 0;
+            line-height: 1.5;
+        }
+        .editor-status {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: .2rem .65rem;
+            background: var(--accent);
+            color: var(--accent-text);
+            font-size: .68rem;
+            flex-shrink: 0;
+            border-radius: 0;
+        }
+        .editor-status span { opacity: .95; }
+
+        /* Right tool window — IntelliJ AI / tool panel style */
+        .chat-panel {
+            width: 280px;
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-width: 180px;
+            max-width: 55%;
+            background: var(--surface);
+            overflow: hidden;
+            border: 0;
+            border-radius: 0;
+        }
+        .tool-header {
+            display: flex;
+            align-items: stretch;
+            background: var(--tab-bar);
+            border-bottom: 1px solid var(--border);
+            min-height: 32px;
+        }
+        .tool-tab {
+            display: flex;
+            align-items: center;
+            padding: 0 .85rem;
+            font-size: .75rem;
+            color: var(--muted);
+            border-right: 1px solid var(--border);
+        }
+        .tool-tab.active {
+            background: var(--tab-active);
+            color: var(--text-strong);
+        }
+        .tool-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            padding-right: .5rem;
+            color: var(--muted);
+            font-size: .7rem;
         }
         #chat {
             flex: 1;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: .75rem;
-            padding: .5rem 0 1rem;
-            min-height: 50vh;
+            gap: .45rem;
+            padding: .45rem;
+            min-height: 0;
+            background: var(--surface-2);
         }
         .msg {
-            max-width: 85%;
-            padding: .85rem 1rem;
-            border-radius: 12px;
+            max-width: 92%;
+            padding: .65rem .75rem;
+            border-radius: 10px;
             white-space: pre-wrap;
-            line-height: 1.45;
+            line-height: 1.4;
+            font-size: .8rem;
+            border: 1px solid var(--border);
         }
         .msg.user {
             align-self: flex-end;
             background: var(--user);
-            color: #04111a;
+            color: var(--user-text);
         }
         .msg.assistant {
             align-self: flex-start;
             background: var(--agent);
+            color: var(--text);
         }
         .empty {
             color: var(--muted);
             text-align: center;
             margin: auto;
+            font-size: .8rem;
+            padding: 1rem;
         }
         .loading {
             display: none;
             align-self: flex-start;
             align-items: center;
-            gap: .75rem;
+            gap: .6rem;
             background: var(--agent);
-            padding: .85rem 1rem;
-            border-radius: 12px;
-            max-width: 85%;
+            border: 1px solid var(--border);
+            padding: .65rem .75rem;
+            border-radius: 10px;
+            max-width: 92%;
+            font-size: .8rem;
         }
-        .loading.visible {
-            display: flex;
-        }
+        .loading.visible { display: flex; }
         .spinner {
-            width: 22px;
-            height: 22px;
-            border: 3px solid rgba(226, 232, 240, .25);
+            width: 16px;
+            height: 16px;
+            border: 2px solid color-mix(in srgb, var(--text) 25%, transparent);
             border-top-color: var(--accent);
             border-radius: 50%;
             animation: spin .7s linear infinite;
             flex-shrink: 0;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .loading-text {
-            color: var(--muted);
-            font-size: .95rem;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: var(--muted); }
         .loading-text strong {
             color: var(--accent);
             font-variant-numeric: tabular-nums;
         }
-        form {
-            display: flex;
-            gap: .5rem;
-            background: var(--panel);
-            padding: .75rem;
-            border-radius: 12px;
+        form#chatForm {
+            display: block;
+            padding: .45rem;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            border-radius: 0;
+            min-width: 0;
         }
-        form.busy {
+        form#chatForm.busy {
             opacity: .7;
             pointer-events: none;
         }
-        input[type="text"] {
-            flex: 1;
-            border: none;
-            border-radius: 8px;
-            padding: .75rem 1rem;
+        .composer {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--input-bg);
+            min-width: 0;
+            overflow: hidden;
+        }
+        .composer:focus-within {
+            border-color: var(--accent);
+            outline: 1px solid var(--accent);
+        }
+        #messageInput {
+            display: block;
+            width: 100%;
+            height: 4.6rem;
+            min-height: 4.6rem;
+            max-height: 8rem;
+            resize: vertical;
+            border: 0;
+            border-radius: 0;
+            padding: .55rem .7rem .25rem;
             font: inherit;
-            background: #0f172a;
+            font-size: .78rem;
+            line-height: 1.35;
+            background: transparent;
             color: var(--text);
+            outline: none;
         }
-        button {
-            border: none;
-            border-radius: 8px;
-            padding: .75rem 1.25rem;
-            font: inherit;
-            font-weight: 700;
-            background: var(--accent);
-            color: #082f49;
+        .composer-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: .2rem .35rem .35rem;
+            gap: .25rem;
+        }
+        #sendBtn {
+            flex: 0 0 auto;
+            width: 1.85rem;
+            height: 1.85rem;
+            min-width: 1.85rem;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            border-radius: 999px;
+            display: inline-grid;
+            place-items: center;
+            background: transparent;
+            color: var(--text);
             cursor: pointer;
-            min-width: 5.5rem;
         }
-        button:hover { filter: brightness(1.08); }
-        button:disabled {
-            cursor: wait;
-            filter: none;
+        #sendBtn svg {
+            width: 1.05rem;
+            height: 1.05rem;
+            display: block;
+        }
+        #sendBtn .icon-send {
+            transform: translateX(1px);
+        }
+        #sendBtn:hover {
+            background: var(--theme-btn);
+            color: var(--text-strong);
+        }
+        #sendBtn:disabled { cursor: wait; opacity: .75; }
+        #sendBtn.busy .icon-send { display: none; }
+        #sendBtn.busy .icon-wait { display: block; }
+        #sendBtn .icon-wait { display: none; }
+
+        @media (max-width: 900px) {
+            .workspace {
+                flex-wrap: wrap;
+            }
+            .menu-rail {
+                width: 100% !important;
+                max-width: none;
+                max-height: 160px;
+                border-bottom: 1px solid var(--border);
+            }
+            .splitter { display: none; }
+            .editor-panel {
+                width: 100%;
+                min-height: 200px;
+                flex: 1 1 40%;
+                border-bottom: 1px solid var(--border);
+            }
+            .chat-panel {
+                width: 100% !important;
+                max-width: none;
+                flex: 1 1 45%;
+                min-height: 240px;
+            }
         }
     </style>
 </head>
 <body>
 <header>
-    <h1>Deploy Agent</h1>
-    <p>Ask the AI agent to deploy your application to a server (simulation).</p>
+    <div class="header-text">
+        <h1>Deploy Agent</h1>
+        <p>Ask the AI agent to deploy your application to a server (simulation).</p>
+    </div>
+    <div class="theme-toggle">
+        <button type="button" id="themeToggle" aria-label="Switch to dark theme" title="Toggle theme">
+            <!-- Sun: shown in dark theme (click → light) -->
+            <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+            </svg>
+            <!-- Moon: shown in light theme (click → dark) -->
+            <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z"></path>
+            </svg>
+        </button>
+    </div>
 </header>
-<main>
-    <div id="chat">
-        <div th:if="${#lists.isEmpty(messages)}" class="empty" id="emptyHint">
-            Example: Deploy payments-api version 1.2.0 to staging
+
+<div class="workspace" id="workspace">
+    <!-- Wider left menu window -->
+    <aside class="menu-rail" id="menuPanel" aria-label="Menu">
+        <div class="menu-title">Project</div>
+        <div class="menu-item active" title="Project"><span class="code">Pr</span><span>Project</span></div>
+        <div class="menu-item" title="Deploy"><span class="code">Dp</span><span>Deploy</span></div>
+        <div class="menu-item" title="Jenkins"><span class="code">Jk</span><span>Jenkins</span></div>
+        <div class="menu-item" title="Settings"><span class="code">St</span><span>Settings</span></div>
+        <div class="menu-spacer"></div>
+        <div class="menu-foot">Menu</div>
+    </aside>
+
+    <div class="splitter" id="splitLeft" role="separator" aria-orientation="vertical"
+         aria-label="Resize menu and workspace" title="Drag to resize"></div>
+
+    <!-- Large middle editor / future workspace -->
+    <section class="editor-panel" id="editorPanel" aria-label="Workspace">
+        <div class="editor-tabs">
+            <div class="editor-tab active"><span class="dot"></span> workspace.future</div>
+            <div class="editor-tab">deploy.plan</div>
+            <div class="editor-tab">jenkins.job</div>
         </div>
-        <div th:each="m : ${messages}"
-             th:class="'msg ' + ${m.role}"
-             th:text="${m.content}"></div>
-        <div id="loading" class="loading" aria-live="polite">
-            <div class="spinner" aria-hidden="true"></div>
-            <div class="loading-text">
-                Agent is working… <strong id="seconds">0</strong>s
+        <div class="editor-body">
+            <div class="editor-intro">
+                <h2>Main workspace</h2>
+                <p>Reserved for future development — logs, status, plans, and deploy details will live here.</p>
+            </div>
+            <div class="editor-canvas">
+                Future development area<br>
+                Drag the midlines to resize panels.
             </div>
         </div>
-    </div>
-    <form id="chatForm" method="post" action="/chat">
-        <input id="messageInput" type="text" name="message"
-               placeholder="Describe the deployment…" required autofocus>
-        <button id="sendBtn" type="submit">Send</button>
-    </form>
-</main>
+        <div class="editor-status">
+            <span>UTF-8</span>
+            <span>Deploy Agent</span>
+            <span>Ready</span>
+        </div>
+    </section>
+
+    <div class="splitter" id="splitRight" role="separator" aria-orientation="vertical"
+         aria-label="Resize workspace and chat" title="Drag to resize"></div>
+
+    <!-- Right tool window = chat -->
+    <section class="chat-panel" id="chatPanel" aria-label="AI Chat">
+        <div class="tool-header">
+            <div class="tool-tab active">AI Chat</div>
+            <div class="tool-tab">Output</div>
+            <div class="tool-actions">Tool Window</div>
+        </div>
+        <div id="chat">
+            <div th:if="${#lists.isEmpty(messages)}" class="empty" id="emptyHint">
+                Example: Deploy payments-api version 1.2.0 to staging
+            </div>
+            <div th:each="m : ${messages}"
+                 th:class="'msg ' + ${m.role}"
+                 th:text="${m.content}"></div>
+            <div id="loading" class="loading" aria-live="polite">
+                <div class="spinner" aria-hidden="true"></div>
+                <div class="loading-text">
+                    Agent is working… <strong id="seconds">0</strong>s
+                </div>
+            </div>
+        </div>
+        <form id="chatForm" method="post" action="/chat">
+            <div class="composer">
+                <textarea id="messageInput" name="message" rows="3"
+                          placeholder="Describe the deployment…" required autofocus></textarea>
+                <div class="composer-bar">
+                    <button id="sendBtn" type="submit" aria-label="Send" title="Send">
+                        <svg class="icon-send" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+                            <path d="M3.4 20.6c-.5.2-.9-.3-.7-.8L5.2 13l9.3-1-9.3-1L2.7 4.2c-.2-.5.2-1 .7-.8l17.5 7.5c.5.2.5.9 0 1.1L3.4 20.6z"/>
+                        </svg>
+                        <svg class="icon-wait" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                             stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="8" stroke-dasharray="36" stroke-dashoffset="12"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </section>
+</div>
+
 <script>
+    (function () {
+        const root = document.documentElement;
+        const toggleBtn = document.getElementById('themeToggle');
+        const stored = localStorage.getItem('deploy-agent-theme');
+        const initial = stored === 'dark' || stored === 'light' ? stored : 'light';
+
+        function applyTheme(theme) {
+            root.setAttribute('data-theme', theme);
+            localStorage.setItem('deploy-agent-theme', theme);
+            toggleBtn.setAttribute(
+                'aria-label',
+                theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'
+            );
+            toggleBtn.title = theme === 'light' ? 'Dark mode' : 'Light mode';
+        }
+
+        applyTheme(initial);
+        toggleBtn.addEventListener('click', function () {
+            const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            applyTheme(next);
+        });
+    })();
+
+    (function () {
+        const workspace = document.getElementById('workspace');
+        const menuPanel = document.getElementById('menuPanel');
+        const chatPanel = document.getElementById('chatPanel');
+        const splitLeft = document.getElementById('splitLeft');
+        const splitRight = document.getElementById('splitRight');
+        const STORAGE_KEY = 'deploy-agent-panel-widths';
+        const MIN_LEFT = 140;
+        const MIN_MID = 220;
+        const MIN_RIGHT = 180;
+
+        function loadWidths() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (parsed.left) menuPanel.style.width = parsed.left + 'px';
+                if (parsed.right) chatPanel.style.width = parsed.right + 'px';
+            } catch (e) { /* ignore */ }
+        }
+
+        function saveWidths() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                left: Math.round(menuPanel.getBoundingClientRect().width),
+                right: Math.round(chatPanel.getBoundingClientRect().width)
+            }));
+        }
+
+        function bindSplitter(splitter, mode) {
+            splitter.addEventListener('mousedown', function (e) {
+                if (window.matchMedia('(max-width: 900px)').matches) return;
+                e.preventDefault();
+                splitter.classList.add('active');
+                workspace.classList.add('resizing');
+
+                const startX = e.clientX;
+                const startLeft = menuPanel.getBoundingClientRect().width;
+                const startRight = chatPanel.getBoundingClientRect().width;
+                const total = workspace.getBoundingClientRect().width;
+                const splitterW = 2;
+
+                function onMove(ev) {
+                    const dx = ev.clientX - startX;
+                    if (mode === 'left') {
+                        let nextLeft = startLeft + dx;
+                        const maxLeft = total - startRight - splitterW * 2 - MIN_MID;
+                        nextLeft = Math.max(MIN_LEFT, Math.min(maxLeft, nextLeft));
+                        menuPanel.style.width = nextLeft + 'px';
+                    } else {
+                        let nextRight = startRight - dx;
+                        const maxRight = total - startLeft - splitterW * 2 - MIN_MID;
+                        nextRight = Math.max(MIN_RIGHT, Math.min(maxRight, nextRight));
+                        chatPanel.style.width = nextRight + 'px';
+                    }
+                }
+
+                function onUp() {
+                    splitter.classList.remove('active');
+                    workspace.classList.remove('resizing');
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    saveWidths();
+                }
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        }
+
+        loadWidths();
+        bindSplitter(splitLeft, 'left');
+        bindSplitter(splitRight, 'right');
+    })();
+
     const chat = document.getElementById('chat');
     const form = document.getElementById('chatForm');
     const loading = document.getElementById('loading');
@@ -190,7 +765,6 @@
             emptyHint.style.display = 'none';
         }
 
-        // Show the user's message immediately while waiting
         const pending = document.createElement('div');
         pending.className = 'msg user';
         pending.textContent = messageInput.value;
@@ -199,7 +773,7 @@
         loading.classList.add('visible');
         form.classList.add('busy');
         sendBtn.disabled = true;
-        sendBtn.textContent = '…';
+        sendBtn.classList.add('busy');
         messageInput.readOnly = true;
         chat.scrollTop = chat.scrollHeight;
 
@@ -209,6 +783,13 @@
             seconds += 1;
             secondsEl.textContent = String(seconds);
         }, 1000);
+    });
+
+    messageInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            form.requestSubmit();
+        }
     });
 </script>
 </body>
